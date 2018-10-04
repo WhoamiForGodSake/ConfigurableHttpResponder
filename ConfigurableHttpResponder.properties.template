@@ -1,0 +1,157 @@
+# Property file loaded at the webserver Startup
+# Has to be in the same directory than the executable jar
+
+######### BEGIN : MANDATORY PARAMETERS ###########################################################################
+
+# Port on which the Web-Server is listening
+port=8081
+
+# Load response files in memory at the program startup (yes or no)
+LoadFilesInMemory=yes
+
+# Default type of content of the answer (MIME type) - Ex : application/json , text/xml
+# This by-default value can be overloaded through the "Replace Parameter" addHeaderValue.Content-Type:xxx/yyy
+MIMEType=application/json
+#MIMEType=text/html
+#MIMEType=text/xml
+
+##################################################################################################
+#### CONFIGURE ANSWERS ###########################################################################
+##################################################################################################
+#### CONFIGURE WHICH REQUESTS WILL BE ANSWERED AND WHICH CONTENT WILL BE PUSHED IN THE ANSWER ####
+##################################################################################################
+# DEFINING THE ANSWER # (1st,2nd,3rd,4th,5th,6th,7th);(1st,2nd,3rd,4th);...  1st --> 4th parameters are mandatory.
+# 1st parameter is the string which will trigger the response if found in the URL. Only the first match will apply.
+#     ANY means : send the answers to all non-matching HTTP requests.
+#     If surrounded by *, it will search if the string is contained in the URL. Ex : *tata* will match if the URL contains 'tata' 
+#
+# 2nd parameter is one of the HTTP rest method : POST-GET-PUT-DELETE or ANY which means any method. Yon can put several method separated by a "-".
+#
+# The two first parameters together will determine which answer will be sent.
+#
+# 3rd parameter is the percentage of response of this type (sum of all percentage must be equal to 100 - 0 means don't send this type of answer)
+#
+# 4th parameter is the http status code that will be returned - Ex : 200 (OK), 500 (Internal Server Error), ...
+#
+# 5th is the path of the file which contains the content of the HTML body. If empty, nothing is written in the reponse body
+#     Ex : with a GET http request with a URL : http://localhost:5600/paf and response=(paf,GET,60,200,file1);(paf,GET,40,500) :
+#          60% of the calls will be answed by an http status 200 with a body equals to the content of file1
+#          40% of the calls  will be answed by an http status 500 with an empty body
+# 
+# 6th (optionnal) : Replacement rule. (not fully detailed here)
+#     If several rules are present, the separator must be '|'
+#     - Replacement in the response body : <chain to look for>-><replacement text|variable|variable.subVariable>
+#     - Add a header : addHeaderValue.<name of the header>:<value of the header|variable name>
+#     - Condition : condition#<condition on variable>#<if validated do that>#<if validated do that>...
+#                   <condition on variable> : <variable name>=<value to be compared against>
+#                   <if validated do that> : changeHttpReturnCode:<Http return code>|changeBody:<file used as the answer body>|changeMimeType:<MimeType>|addHeaderValue:<header name>:<header value|variable name>
+#     If omitted, no replacement will be made in the reponse body
+#     Remark : The replacements occured after the JSON Variable Templating.
+# 
+# 7th (optionnal) : additionnal delay before sending the answer in cmillisecond. If 0 or omitted, the answer is sent ASAP
+#
+# Attention : You cannot comment a part of the 'response' property if you are in multiline. In that case, just comment response=... to comment everything.
+#
+# "Real-life" example : 
+#response=\
+(*tata*,GET,100,201,C:/Users/r_sal/Downloads/ws_response_toto_invalid.json);\
+(toto,POST-GET-PUT,100,200,C:/Users/r_sal/Downloads/ws_response_toto.json);\
+(toto,DELETE,50,500,C:/Users/r_sal/Downloads/ws_response_toto_invalid.json);\
+(toto,DELETE,50,501,C:/Users/r_sal/Downloads/ws_response_toto_invalid.json);\
+(titi,POST,100,200,C:/Users/r_sal/Downloads/ws_response_emerg_basic.json,\
+E22->E66|E5->myContractNumber|PAF->myContractNumber.name|addHeaderValue.testing:myContractNumber|\
+condition#PAF=unknown#changeHttpReturnCode:501#changeBody:C:/Users/r_sal/Downloads/ws_response_toto_invalid.json#changeMimeType:text/xml#addHeaderValue:test1:myContractNumber#addHeaderValue:test:666);\
+(ANY,DELETE,100,501,C:/Users/r_sal/Downloads/ws_response_toto_invalid.json);\
+(ANY,ANY,50,200,C:/Users/r_sal/Downloads/ws_response_emerg_basic.json);\
+(ANY,ANY,25,404,,,10000);\
+(ANY,ANY,25,500,C:/Users/r_sal/Downloads/ws_response_internal_error.json)
+######### END : MANDATORY PARAMETERS #############################################################################
+
+
+######### BEGIN : OPTIONNAL PARAMETERS ############################################################################
+
+##############################################################
+#### VARIABLE CREATION #######################################
+#### Must be used if CONFIGURE ANSWER uses some variables ####
+##############################################################
+# Define variable to capture a value from the incomming HTTP request
+#
+# Format : newApplicationVariable.<name you're giving to the variable>=<where to search>#separator#<capturing pattern>#separator#<which occurence>
+# The separator #separator# is not very elegant but since the regex will use weird characters ... 
+#
+# Details :
+#    <where to search> : into_url|into_body|into_header
+#    <capturing pattern> : java regex or name of the header
+#    <which occurence> : 0 or empty means all occurences. if n : it will extract only the n th matching occurence
+#    Ex : if url http://1.2.3.4:8080/get/1234/abc then clientNb=into_url.(\\w+).2 will put 1234 into the clientNb variable
+#    Attention : BackSlashes have to be escaped : Ex : \w must be written \\w
+#    Here's some usefull java regex :
+#        json : "myValue":"xyz"                (?<="myValue":)(("([^"]*)")|(\w*))   => "xyz"
+#        attribut=valeur                       (?<=attribut=)(("([^"]*)")|(\w*))    => valeur
+#        <attribut>aaa</attribut>              (?<=<attribut>)(.+?)(?=</attribut>)  => aaa
+#
+# Examples :
+#    Capture word without quotes ( "contractNumber": abc ==> abc ) :
+#        newApplicationVariable.myContractNumber=into_body#separator#(?<="contractNumber":)(\\w*)#separator#1
+#    Capture word with double quotes ( "contractNumber": "abc" ==> "abc" ) : Quote included
+#        newApplicationVariable.myContractNumber=into_body#separator#(?<="contractNumber":)(\"([^"]*)\")#separator#1
+#    Capture word with quotes double quotes ( "contractNumber": "abc" ==> abc ) : Quote not included
+#        newApplicationVariable.myContractNumber=into_body#separator#(?<="contractNumber":)("([^"]*)")#separator#2
+#
+#
+# Some examples :
+#newApplicationVariable.myContractNumber=into_body#separator#(?<="contractNumber":)("([^"]*)")#separator#2
+#newApplicationVariable.zzz=12
+#newApplicationVariable.yyy=into_header#separator#Content-Type
+#newApplicationVariable.xxx=into_url#separator#.*#separator#0
+####################################################################
+
+
+############################################################################
+#### VARIABLE LOOKUP IN FILE ###############################################
+#### Must be used if CONFIGURE ANSWER uses some lookup variables ###########
+#### Ex of lookup variable :  myVariable.name ##############################
+############################################################################
+# Lookup into an external file to make some data correspondance (and thus reference some new variables)
+# Format : externalLookupData.<name of the variable on which the lookup will be performed>=<name of the file with path>
+# Format of the data in the file : <variable value>;<name of lookup variable 1>=<value>|<name of lookup variable 2>=<value>|...
+# A defaul value can be set if the key is not found.
+# Attention : All external lookup files are loaded in memory at the program startup.
+#
+# Exemple : 
+#    externalLookupData.myContractNumber=C:/tmp/myFile.csv
+#    C:/tmp/myFile.csv content :
+#        5678;name=Bob Sponge|city=NYC
+#        1234;name=John Smith
+#        default;name=unknown|city=unknown
+#
+#    And the following variable is declared : newApplicationVariable.myContractNumber=into_header#separator#Contract-Number
+#    if the request has a header Contract-Number=1234 then the variable myContractNumber will have the value 1234
+#    And consequently myContractNumber.name will have the value : John Smith
+#    
+#
+# Some examples :
+#externalLookupData.myContractNumber=C:/Users/r_sal/OneDrive/sync/raftree/eclipse_workspace/restprj/target/lookupTable.csv
+#externalLookupData.useless=C:/Users/r_sal/OneDrive/sync/raftree/eclipse_workspace/restprj/target/lookupTable1.csv
+############################################################################
+
+
+############################################################################
+#### JSON Variable Templating ##############################################
+#### Applies only for MIME Type containing JSON (Ex : application/json) ####
+#### The modification made here applies first                           ####
+############################################################################
+# Increment the JSON key each time it is found # The number is which value the incrementation will start from #
+# Ex: incrementKey=id:50 and [{id:3, a:3},{id:10}] --> [{id:51, a:3},{id:52}] 
+#incrementKey=id:109,loopID:5
+# Increment the JSON key once every loop ( [{id:XX, a:3},{id:XX}] will have the same value for both "id" if it is an incrementKeyForWhole 
+# Ex: incrementKeyForWhole=id:50 and [{id:3, a:3},{id:10}] --> [{id:51, a:3},{id:51}] 
+#incrementKeyForWhole=id2:220,id3:66
+# The value will be replaced #
+#keyToReplace=test:PIF,test2:PAF
+# The chain will be replaced - first param is a regexp / second one is a String (complex regex don't work well :/)
+#chainToReplace=E4:E22,gentPro:Pouet,[0-9]\\=[0-9]:9\\=9
+####################################################################
+
+######### END : OPTIONNAL PARAMETERS ##############################################################################
+
