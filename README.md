@@ -9,4 +9,4 @@ You can then amend the responses, delay them based on the headers of the incomin
 
 For a detailled explanation, download the Dokuwiki file, unzip it and run run.cmd (for windows), for other OS, I'm sure you'll find a way ! (The administrator user/password is admin/manage).
 
-For a quick video of a basic installation with simple configuration : *Download Video_ConfigurableHttpResponder_Basic_Install_and_conf.7z*.
+For a quick video of a basic installation with simple configuration : Download *Video_ConfigurableHttpResponder_Basic_Install_and_conf.7z*.
