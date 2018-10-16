@@ -7,6 +7,6 @@ The random number allows you to define, for exemple a percentage of error respon
 
 You can then amend the responses, delay them based on the headers of the incoming request or its body. You can also, completly change an answer based on some request parameters, but the syntax is trickier !
 
-For a detailled explanation, download the Dokuwiki file, unzip it and run run.cmd (for windows), for other OS, I'm sure you'll find a way ! (The administrator user/password is admin/manage).
+For a detailled explanation, download the Dokuwiki file, unzip it and run run.cmd as an administrator (for windows), for other OS, I'm sure you'll find a way ! Please note that you might have to modify the path in run.cmd depending on your OS configuration. If needed, the administrator user/password is admin/manage.
 
 For a quick video of a basic installation with simple configuration : Download *Video_ConfigurableHttpResponder_Basic_Install_and_conf.7z*.
